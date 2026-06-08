@@ -1,0 +1,6 @@
+# Test/dev dependencies. The full agent also needs requirements.txt (google-ads,
+# requests). The tests below import only the pure layers, so these four suffice.
+pandas>=2.0.0
+PyYAML>=6.0
+python-dotenv>=1.0.0
+pytest>=7.4

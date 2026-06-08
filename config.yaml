@@ -1,0 +1,91 @@
+# ===========================================================================
+# gads-agent configuration
+# ---------------------------------------------------------------------------
+# These are SAFE DEFAULTS for managing a single live Search campaign.
+# Money values are in your ACCOUNT CURRENCY (the agent converts Google's
+# internal "micros" for you). Secrets are NEVER stored here — see .env.example.
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# SAFETY CAPS  — hard guardrails enforced by apply.py on every --apply run.
+# These exist to make runaway or out-of-scope changes impossible.
+# ---------------------------------------------------------------------------
+safety:
+  # Max number of mutating changes allowed in ONE --apply run. If a run would
+  # exceed this, the agent ABORTS before writing anything and reports instead.
+  max_changes_per_run: 25
+
+  # Max size of a single bid change, as a percent of the current bid. A larger
+  # computed move is clamped down to this cap (never exceeded).
+  max_bid_change_pct: 15
+
+  # Allow-list of campaign IDs the agent may EVER modify. Any action targeting
+  # a campaign NOT in this list is refused. Empty list => writes fully disabled
+  # (recommendations are still produced in the report).
+  allowed_campaign_ids:
+    - "1234567890"        # <-- REPLACE with your real Search campaign ID
+
+# ---------------------------------------------------------------------------
+# DATA  — what pull.py fetches via GAQL.
+# ---------------------------------------------------------------------------
+data:
+  lookback_days: 30       # reporting window for keyword + search-term stats
+
+# ---------------------------------------------------------------------------
+# RULES  — thresholds for the five decision rules in rules.py.
+# ---------------------------------------------------------------------------
+rules:
+  # Rule 1 — PAUSE_KEYWORD: pause keywords that spend but never convert.
+  #   Triggers when cost >= min_spend AND conversions == 0.   (auto-appliable)
+  pause_keyword:
+    min_spend: 75.0         # account currency (e.g. AED)
+
+  # Rule 2 — ADD_NEGATIVE: block search terms that waste clicks.
+  #   Triggers when clicks >= min_clicks AND conversions == 0. (auto-appliable)
+  add_negative:
+    min_clicks: 20
+
+  # Rule 3 — ADJUST_BID: nudge keyword bids toward a target CPA.
+  #   Recommend-only UNLESS automation.enable_auto_bids is true; any move is
+  #   clamped by safety.max_bid_change_pct.
+  #   NOTE: manual bid edits only take effect on MANUAL_CPC campaigns. apply.py
+  #   auto-detects the campaign bidding strategy and skips/flags bid changes on
+  #   Smart Bidding (Target CPA / Target ROAS / Maximize *) campaigns.
+  adjust_bid:
+    target_cpa: 25.0        # desired cost per conversion (account currency)
+    min_conversions: 1      # need >= this many conv before trusting CPA to RAISE
+    cpa_tolerance: 1.30     # only LOWER a bid when CPA > target_cpa * this (30% over)
+    min_clicks_to_lower: 30 # ...and only when the keyword has this much volume
+    bid_step_pct: 10        # size of each nudge, then clamped by max_bid_change_pct
+
+  # Rule 4 — FLAG_BUDGET: monthly pacing alert (recommend-only, always).
+  #   Projects month-end spend = (month-to-date spend / days elapsed) * days in
+  #   month, then compares against monthly_budget.
+  budget:
+    monthly_budget: 3000.0  # planned monthly budget (account currency)
+    overpace_pct: 110       # projected month-end above this % of budget -> flag
+    underpace_pct: 80       # projected month-end below this % of budget -> flag
+
+  # Rule 5 — FLAG_LOW_CTR_AD: surface weak RSAs vs their ad-group average
+  #   (recommend-only, always).
+  low_ctr_ad:
+    min_impressions: 500    # need this many impressions before judging an ad
+    ctr_gap_pct: 30         # ad CTR more than this % below its ad-group avg -> flag
+
+# ---------------------------------------------------------------------------
+# AUTOMATION GATES
+# ---------------------------------------------------------------------------
+automation:
+  # Rules 1 & 2 are auto-appliable under --apply.
+  # Rule 3 (ADJUST_BID) is auto-applied ONLY when this is true; otherwise it is
+  # recommend-only. Rules 4 & 5 are ALWAYS recommend-only flags.
+  enable_auto_bids: false
+
+# ---------------------------------------------------------------------------
+# REPORTING
+# ---------------------------------------------------------------------------
+reporting:
+  output_dir: "reports"     # markdown daily reports are written here
+  currency: "AED"           # label prefixed to money values in the report
+  # Slack + SMTP delivery are configured purely via env vars (.env). If those
+  # vars are absent, the corresponding delivery step is a silent no-op.

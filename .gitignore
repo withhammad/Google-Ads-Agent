@@ -1,0 +1,17 @@
+# Secrets — never commit
+.env
+
+# Runtime artifacts (kept locally; needed for --undo but not for the repo)
+logs/*.json
+reports/*.md
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# OS
+.DS_Store

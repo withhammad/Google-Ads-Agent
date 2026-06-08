@@ -1,5 +1,6 @@
 # Secrets — never commit
 .env
+client_secret*.json
 
 # Runtime artifacts (kept locally; needed for --undo but not for the repo)
 logs/*.json

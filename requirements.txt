@@ -3,6 +3,7 @@
 # (smtplib + email are used for SMTP reporting and ship with the stdlib.)
 
 google-ads>=25.0.0
+google-auth-oauthlib>=1.0.0   # used by src/get_refresh_token.py (OAuth desktop flow)
 pandas>=2.0.0
 PyYAML>=6.0
 python-dotenv>=1.0.0

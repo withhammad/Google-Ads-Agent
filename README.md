@@ -1,15 +1,30 @@
-# gads-agent
+# Google Ads Rules Automation
 
-Autonomous **Google Ads optimization agent** for a single live Search campaign.
-It pulls 30 days of keyword / search-term / ad data, runs a rules engine, writes a
-daily markdown report (optionally to Slack + email), and — only when you explicitly
-allow it — applies low-risk changes with hard guardrails and a full undo log.
+A Python rules engine for reviewing one Search campaign and proposing bounded account changes. The workflow pulls campaign data, evaluates configured rules, writes a report and supports guarded changes with an undo log.
 
-> **Dry-run by default.** Running the agent makes **zero API writes** unless you
-> pass `--apply`. Even then, every change is bounded by the caps in `config.yaml`
-> and logged so it can be reversed with `--undo`.
+> **This project is deterministic rules-based automation, not an LLM or AI agent.** It uses explicit thresholds and actions.
 
-Built and verified against the official **`google-ads` Python library (v31 / API v24)**.
+> **Dry-run by default.** No account writes occur unless you pass `--apply`. Apply mode remains bounded by the campaign allow-list and change caps in `config.yaml`; changes are logged for review and undo.
+
+Built against the Google Ads Python library v31 / API v24. Use a sandbox account first and confirm API compatibility before connecting an account.
+
+## What it demonstrates
+
+- Python modules that separate API access, rule evaluation, guarded writes and reporting.
+- Offline tests for the rule and safety layers.
+- Explicit apply and undo commands instead of silent account changes.
+- GitHub Actions for tests and a scheduled **dry-run** report; CI never passes `--apply`.
+
+## Try it
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+python -m pytest
+```
+
+For account setup, required credentials, configuration and the full safety model, see the [detailed setup guide below](#prerequisites--google-ads-api-access-start-this-first-approval-takes-days). Keep credentials in environment variables or a local ignored `.env` file. Never commit account secrets.
 
 ---
 
